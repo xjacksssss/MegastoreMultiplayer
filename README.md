@@ -110,12 +110,7 @@ See [Building from source](#building-from-source).
    cd MegastoreMultiplayer
    ```
 
-2. Activate the git hooks (one-time, per clone):
-   ```powershell
-   .\setup-dev.ps1
-   ```
-
-3. Update the game path in `MegastoreMultiplayer/MegastoreMultiplayer.csproj`:
+2. Update the game path in `MegastoreMultiplayer/MegastoreMultiplayer.csproj`:
    ```xml
    <GameDir>C:\Games\Megastore.Simulator.v0.4.1</GameDir>
    ```
