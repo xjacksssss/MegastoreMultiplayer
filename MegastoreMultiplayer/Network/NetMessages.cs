@@ -980,12 +980,13 @@ namespace MegastoreMultiplayer.Network
             return _writer;
         }
 
-        public static NetDataWriter WriteNpcSpawn(int networkId, Vector3 position)
+        public static NetDataWriter WriteNpcSpawn(int networkId, Vector3 position, int poolIndex = -1)
         {
             _writer.Reset();
             _writer.Put((byte)MessageType.NpcSpawn);
             _writer.Put(networkId);
             _writer.Put(position.x); _writer.Put(position.y); _writer.Put(position.z);
+            _writer.Put(poolIndex); // customer pool index so clients show the same model
             return _writer;
         }
 
@@ -1010,7 +1011,8 @@ namespace MegastoreMultiplayer.Network
         {
             int networkId = r.GetInt();
             var position  = new Vector3(r.GetFloat(), r.GetFloat(), r.GetFloat());
-            NpcNetworkManager.SpawnCustomer(networkId, position);
+            int poolIndex = r.GetInt();
+            NpcNetworkManager.SpawnCustomer(networkId, position, poolIndex);
         }
 
         private static void ApplyNpcDespawn(NetPeer sender, NetDataReader r)

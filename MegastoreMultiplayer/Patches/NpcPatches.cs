@@ -84,7 +84,8 @@ public static class Customer_Activate_Patch
         int netId = NpcNetworkManager.GetNetworkId(__instance);
         if (netId > 0)
             MultiplayerManager.SendToAllReliable(
-                NetMessages.WriteNpcSpawn(netId, __instance.transform.position));
+                NetMessages.WriteNpcSpawn(netId, __instance.transform.position,
+                    NpcNetworkManager.GetCustomerPoolIndex(__instance)));
     }
 }
 
@@ -100,7 +101,8 @@ public static class Customer_ActivateWithCar_Patch
         int netId = NpcNetworkManager.GetNetworkId(__instance);
         if (netId > 0)
             MultiplayerManager.SendToAllReliable(
-                NetMessages.WriteNpcSpawn(netId, __instance.transform.position));
+                NetMessages.WriteNpcSpawn(netId, __instance.transform.position,
+                    NpcNetworkManager.GetCustomerPoolIndex(__instance)));
     }
 }
 

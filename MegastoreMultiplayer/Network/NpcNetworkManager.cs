@@ -389,15 +389,42 @@ namespace MegastoreMultiplayer.Network
             _carTargetRot[parkingLotIndex] = Quaternion.Euler(euler);
         }
 
+        // Returns the pool index of a customer so clients can activate the identical model.
+        public static int GetCustomerPoolIndex(Customer customer)
+        {
+            var cm = SingletonBehaviour<CustomerManager>.Instance;
+            if (cm == null) return -1;
+            var list = Traverse.Create(cm).Field("customers").GetValue<System.Collections.Generic.List<Customer>>();
+            return list?.IndexOf(customer) ?? -1;
+        }
+
         // ── Client — customer API ────────────────────────────────────────────────
 
-        public static void SpawnCustomer(int networkId, Vector3 position)
+        // poolIndex: the index in CustomerManager.customers so every client activates
+        // the same model. Falls back to a random available customer if the specific
+        // one is already taken (e.g. pool exhaustion edge case).
+        public static void SpawnCustomer(int networkId, Vector3 position, int poolIndex = -1)
         {
             if (_clientCustomers.ContainsKey(networkId)) return;
             var cm = SingletonBehaviour<CustomerManager>.Instance;
             if (cm == null) return;
 
-            var customer = cm.GetRandomAvailableCustomer();
+            Customer customer = null;
+
+            if (poolIndex >= 0)
+            {
+                var list = Traverse.Create(cm).Field("customers").GetValue<System.Collections.Generic.List<Customer>>();
+                if (list != null && poolIndex < list.Count)
+                {
+                    var candidate = list[poolIndex];
+                    if (candidate != null && !candidate.gameObject.activeSelf)
+                        customer = candidate;
+                }
+            }
+
+            if (customer == null)
+                customer = cm.GetRandomAvailableCustomer();
+
             if (customer == null)
             {
                 Plugin.Log.LogWarning($"[NpcNet] No pooled customer available for id {networkId}.");
@@ -544,7 +571,12 @@ namespace MegastoreMultiplayer.Network
 
         public static void WriteToSnapshot(LiteNetLib.Utils.NetDataWriter w)
         {
-            // Customers (networkId + position + last anim trigger)
+            // Customers (networkId + position + last anim trigger + pool index)
+            var cm           = SingletonBehaviour<CustomerManager>.Instance;
+            var customerList = cm != null
+                ? Traverse.Create(cm).Field("customers").GetValue<System.Collections.Generic.List<Customer>>()
+                : null;
+
             int cc = 0;
             foreach (var kv in _hostCustomers) if (kv.Key != null) cc++;
             w.Put(cc);
@@ -555,6 +587,7 @@ namespace MegastoreMultiplayer.Network
                 w.Put(kv.Key.transform.position.x); w.Put(kv.Key.transform.position.y); w.Put(kv.Key.transform.position.z);
                 _customerLastAnim.TryGetValue(kv.Value, out string lastAnim);
                 w.Put(lastAnim ?? "");
+                w.Put(customerList?.IndexOf(kv.Key) ?? -1); // pool index so clients use same model
             }
 
             // Employees
@@ -605,10 +638,11 @@ namespace MegastoreMultiplayer.Network
             int cc = r.GetInt();
             for (int i = 0; i < cc; i++)
             {
-                int    netId   = r.GetInt();
-                var    pos     = new Vector3(r.GetFloat(), r.GetFloat(), r.GetFloat());
+                int    netId    = r.GetInt();
+                var    pos      = new Vector3(r.GetFloat(), r.GetFloat(), r.GetFloat());
                 string lastAnim = r.GetString();
-                SpawnCustomer(netId, pos);
+                int    poolIdx  = r.GetInt();
+                SpawnCustomer(netId, pos, poolIdx);
                 if (!string.IsNullOrEmpty(lastAnim))
                     TriggerCustomerAnim(netId, lastAnim);
             }
