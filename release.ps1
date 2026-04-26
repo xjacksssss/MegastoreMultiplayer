@@ -73,7 +73,13 @@ $notes   = if ($prevTag) {
 Write-Host "Tagging $tag and pushing..."
 git tag $tag
 git push
-git push origin $tag
+# Only push the tag if it doesn't already exist on the remote.
+$remoteTag = git ls-remote --tags origin $tag 2>$null
+if ($remoteTag) {
+    Write-Host "Tag $tag already on remote — skipping tag push."
+} else {
+    git push origin $tag
+}
 
 # ── Create GitHub release ─────────────────────────────────────────────────────
 
