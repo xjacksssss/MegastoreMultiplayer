@@ -9,7 +9,6 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $csproj   = "$PSScriptRoot\MegastoreMultiplayer\MegastoreMultiplayer.csproj"
-$dll      = "$PSScriptRoot\MegastoreMultiplayer\bin\Release\net472\MegastoreMultiplayer.dll"
 $infoFile = "$PSScriptRoot\MegastoreMultiplayer\PluginInfo.cs"
 
 # ── Read version from PluginInfo.cs ───────────────────────────────────────────
@@ -45,14 +44,37 @@ if (git tag -l $tag) {
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 
+# Read GameDir from csproj so we know where CopyToPlugins deployed the DLLs.
+$gameDirMatch = Select-String -Path $csproj -Pattern '<GameDir>([^<]+)</GameDir>'
+if (-not $gameDirMatch) { Write-Error "Could not read GameDir from $csproj" }
+$gameDir   = $gameDirMatch.Matches[0].Groups[1].Value
+$pluginDir = "$gameDir\BepInEx\plugins\MegastoreMultiplayer"
+
 Write-Host "Building $tag..."
 dotnet build $csproj -c Release
 
-if (-not (Test-Path $dll)) {
-    Write-Error "Build succeeded but DLL not found at: $dll"
-}
+$dlls = [System.IO.Directory]::GetFiles($pluginDir, "*.dll")
+if ($dlls.Count -eq 0) { Write-Error "No DLLs found in $pluginDir after build" }
+Write-Host "Built $($dlls.Count) DLL(s): $(($dlls | ForEach-Object { [System.IO.Path]::GetFileName($_) }) -join ', ')"
 
-Write-Host "Built: $dll ($([Math]::Round((Get-Item $dll).Length / 1KB)) KB)"
+# ── Package into zip ──────────────────────────────────────────────────────────
+
+# Zip layout: BepInEx/plugins/MegastoreMultiplayer/*.dll
+# Players extract to game root — no manual folder navigation needed.
+$zipPath  = "$PSScriptRoot\MegastoreMultiplayer-$tag.zip"
+$tempDir  = Join-Path ([System.IO.Path]::GetTempPath()) "mm_release_$tag"
+$tempDest = "$tempDir\BepInEx\plugins\MegastoreMultiplayer"
+
+if (Test-Path $zipPath) { Remove-Item $zipPath }
+if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
+New-Item -ItemType Directory -Force $tempDest | Out-Null
+
+foreach ($dll in $dlls) { Copy-Item $dll $tempDest }
+
+Compress-Archive -Path "$tempDir\*" -DestinationPath $zipPath
+Remove-Item $tempDir -Recurse -Force
+
+Write-Host "Packaged: $zipPath ($([Math]::Round((Get-Item $zipPath).Length / 1KB)) KB)"
 
 # ── Commit version bump ───────────────────────────────────────────────────────
 
@@ -87,9 +109,10 @@ Write-Host "Creating GitHub release $tag..."
 $tempNotes = [System.IO.Path]::GetTempFileName()
 $notes | Set-Content $tempNotes
 try {
-    gh release create $tag $dll --title $tag --notes-file $tempNotes
+    gh release create $tag $zipPath --title $tag --notes-file $tempNotes
 } finally {
-    Remove-Item $tempNotes -ErrorAction SilentlyContinue
+    Remove-Item $tempNotes  -ErrorAction SilentlyContinue
+    Remove-Item $zipPath    -ErrorAction SilentlyContinue
 }
 
 Write-Host ""
