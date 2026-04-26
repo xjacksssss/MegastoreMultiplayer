@@ -1,0 +1,7 @@
+# Shell scripts and hooks must always use LF — CRLF breaks bash on Windows
+.githooks/*   text eol=lf
+*.sh          text eol=lf
+*.yml         text eol=lf
+
+# Everything else: normalise to LF on commit, checkout as native
+*             text=auto
