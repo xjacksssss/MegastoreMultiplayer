@@ -32,13 +32,15 @@ if ($dirty) {
 }
 
 if (git tag -l $tag) {
-    # If the release already exists on GitHub this is a no-op re-run — bail cleanly.
     $existingRelease = gh release view $tag 2>$null
     if ($existingRelease) {
         Write-Host "Release $tag already exists on GitHub — nothing to do."
         exit 0
     }
-    Write-Error "Tag $tag exists locally but has no GitHub release. Delete the tag and retry: git tag -d $tag"
+    # Tag exists locally but no GitHub release — previous attempt was interrupted.
+    # Delete the orphaned local tag and continue so this run completes cleanly.
+    Write-Host "Orphaned local tag $tag found (no GitHub release). Removing and retrying..."
+    git tag -d $tag
 }
 
 # ── Build ─────────────────────────────────────────────────────────────────────
