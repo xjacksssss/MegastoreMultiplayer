@@ -20,8 +20,12 @@ decompiled/
 .idea/
 *.DotSettings.user
 
-# Claude Code session data
+# Claude Code files
 .claude/
+CLAUDE.md
+
+# Local dev tools
+analyze-assembly.ps1
 
 # OS
 Thumbs.db
