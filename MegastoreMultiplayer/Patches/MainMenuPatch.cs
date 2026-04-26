@@ -13,9 +13,15 @@ public static class StartWindow_InjectMultiplayerButton_Patch
 {
     static void Postfix(StartWindow __instance)
     {
-        // Guard against double-injection on scene reloads.
-        if (__instance.GetComponentsInChildren<Button>(true) is var all &&
-            System.Array.Exists(all, b => GetText(b) == "Multiplayer"))
+        // Search the whole scene — buttons may not be children of StartWindow.
+        var all = Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        Plugin.Log.LogInfo($"[MainMenu] StartWindow.Initialize fired. Found {all.Length} Button(s) in scene:");
+        foreach (var b in all)
+            Plugin.Log.LogInfo($"[MainMenu]   GO='{b.gameObject.name}'  text='{GetText(b)}'");
+
+        // Guard against double-injection.
+        if (System.Array.Exists(all, b => b.gameObject.name == "MultiplayerButton"))
             return;
 
         Button continueBtn = null;
@@ -23,32 +29,37 @@ public static class StartWindow_InjectMultiplayerButton_Patch
 
         foreach (var btn in all)
         {
-            var t = GetText(btn);
-            if (t == "Continue") continueBtn = btn;
-            else if (t == "Load") loadBtn    = btn;
+            var goName = btn.gameObject.name.ToLowerInvariant();
+            var text   = GetText(btn).ToLowerInvariant();
+
+            if (continueBtn == null && (text.Contains("continue") || goName.Contains("continue")))
+                continueBtn = btn;
+            if (loadBtn == null && (text.Contains("load") || goName.Contains("load")))
+                loadBtn = btn;
         }
 
         if (continueBtn == null)
         {
-            Plugin.Log.LogWarning("[MainMenu] Could not find Continue button — multiplayer button not injected.");
+            Plugin.Log.LogWarning("[MainMenu] Could not find Continue button — check log above for available buttons.");
             return;
         }
 
-        // Clone Continue so we inherit all visual styling automatically.
+        Plugin.Log.LogInfo($"[MainMenu] Injecting between '{continueBtn.gameObject.name}' and '{loadBtn?.gameObject.name}'.");
+
         var go  = Object.Instantiate(continueBtn.gameObject, continueBtn.transform.parent);
         go.name = "MultiplayerButton";
         SetText(go, "Multiplayer");
 
-        // Position: directly after Continue (before Load if it exists).
         int idx = loadBtn != null
             ? loadBtn.transform.GetSiblingIndex()
             : continueBtn.transform.GetSiblingIndex() + 1;
         go.transform.SetSiblingIndex(idx);
 
-        // Wire up click — opens the F8 multiplayer panel.
         var btn2 = go.GetComponent<Button>();
         btn2.onClick.RemoveAllListeners();
         btn2.onClick.AddListener(() => MultiplayerUI.Instance?.ToggleUI());
+
+        Plugin.Log.LogInfo("[MainMenu] Multiplayer button injected.");
     }
 
     // ── Helpers — handle both legacy Text and TextMeshProUGUI ────────────────
