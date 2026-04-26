@@ -64,6 +64,10 @@
       <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
 
     <!-- DOTween -->
     <Reference Include="DOTween">

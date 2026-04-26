@@ -11,6 +11,8 @@ namespace MegastoreMultiplayer.UI
     // Attach to a DontDestroyOnLoad GameObject in Plugin.Awake().
     public class MultiplayerUI : MonoBehaviour
     {
+        internal static MultiplayerUI Instance;
+
         private bool   _show;
         private string _hostPort  = "7777";
         private string _joinIp    = "";
@@ -40,7 +42,9 @@ namespace MegastoreMultiplayer.UI
             }
         }
 
-        private void ToggleUI()
+        private void Awake() => Instance = this;
+
+        internal void ToggleUI()
         {
             _show = !_show;
             if (_show)
