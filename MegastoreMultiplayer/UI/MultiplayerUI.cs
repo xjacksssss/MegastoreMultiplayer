@@ -128,8 +128,7 @@ namespace MegastoreMultiplayer.UI
                 {
                     GUILayout.Label($"● Hosting on port {_hostPort}  —  {MultiplayerManager.Clients.Count} client(s)", _headerStyle);
                     GUILayout.Space(2);
-                    GUILayout.Label($"Your LAN IP:  {GetLanIp()}", GUI.skin.label);
-                    GUILayout.Label($"Friends connect to:  {GetLanIp()}:{_hostPort}", GUI.skin.label);
+                    DrawHostIpPanel();
                 }
                 else if (StateSnapshot.HasPending)
                 {
@@ -208,7 +207,6 @@ namespace MegastoreMultiplayer.UI
                 {
                     // ── Host (pause screen only) ──────────────────────────────
                     GUILayout.Label("── HOST ──────────────────────");
-                    GUILayout.Label($"Your LAN IP:  {GetLanIp()}");
 
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Port:", GUILayout.Width(36));
@@ -220,7 +218,7 @@ namespace MegastoreMultiplayer.UI
                         if (int.TryParse(_hostPort, out int port))
                         {
                             MultiplayerManager.StartHost(port);
-                            _status = $"Hosting on :{port}  —  share {GetLanIp()}:{port} with friends.";
+                            _status = "Discovering router…";
                         }
                         else _status = "Invalid port.";
                     }
@@ -235,6 +233,44 @@ namespace MegastoreMultiplayer.UI
 
             GUILayout.Space(4);
             GUI.DragWindow(new Rect(0, 0, 10000, 20));
+        }
+
+        private void DrawHostIpPanel()
+        {
+            switch (UPnPHelper.Status)
+            {
+                case UPnPStatus.Discovering:
+                    GUILayout.Label("Detecting external IP…  (checking router UPnP)");
+                    GUILayout.Label($"LAN:  {GetLanIp()}:{_hostPort}");
+                    break;
+
+                case UPnPStatus.Mapped:
+                    // Clear the "Discovering…" status message now that we have the IP.
+                    if (_status == "Discovering router…") _status = "";
+                    GUILayout.Label($"WAN:  {UPnPHelper.ExternalIp}:{_hostPort}  ✓ port opened");
+                    GUILayout.Label($"LAN:  {GetLanIp()}:{_hostPort}");
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Share with friends:", GUILayout.Width(130));
+                    if (GUILayout.Button($"{UPnPHelper.ExternalIp}:{_hostPort}", GUILayout.ExpandWidth(true)))
+                    {
+                        GUIUtility.systemCopyBuffer = $"{UPnPHelper.ExternalIp}:{_hostPort}";
+                        _status = "Copied to clipboard!";
+                    }
+                    GUILayout.EndHorizontal();
+                    break;
+
+                case UPnPStatus.Failed:
+                    if (_status == "Discovering router…") _status = "";
+                    var warnStyle = new GUIStyle(GUI.skin.label) { normal = { textColor = Color.yellow } };
+                    GUILayout.Label("UPnP not available on this router.", warnStyle);
+                    GUILayout.Label($"LAN:  {GetLanIp()}:{_hostPort}");
+                    GUILayout.Label($"Internet play: port-forward {_hostPort} UDP, then share your WAN IP.");
+                    break;
+
+                default:
+                    GUILayout.Label($"LAN:  {GetLanIp()}:{_hostPort}");
+                    break;
+            }
         }
 
         private void OnJoinConnected()

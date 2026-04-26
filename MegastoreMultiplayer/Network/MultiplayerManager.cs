@@ -69,6 +69,7 @@ namespace MegastoreMultiplayer.Network
             IsRunning = true;
             IsHost    = true;
             Plugin.Log.LogInfo($"[Net] Hosting on port {port}.");
+            UPnPHelper.TryMap(port);
         }
 
         private static void OnServerPeerConnected(NetPeer peer)
@@ -350,6 +351,7 @@ namespace MegastoreMultiplayer.Network
             GrowthTracker.Clear();
             DesyncDetector.Reset();
             if (!wasHost) SaveDataSync.Cleanup();
+            UPnPHelper.Release();
             Plugin.Log.LogInfo("[Net] Stopped.");
         }
     }
