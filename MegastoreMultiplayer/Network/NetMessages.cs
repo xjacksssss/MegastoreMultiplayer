@@ -1594,6 +1594,16 @@ namespace MegastoreMultiplayer.Network
 
             var mgr      = FindCheckout(furnitureId);
             var customer = NpcNetworkManager.GetClientCustomer(customerNetId);
+
+            // If the specific proxy wasn't found (pool exhaustion / timing), use any
+            // available customer as a stand-in. CheckoutManager gates PlaceProducts on
+            // currentCustomer != null, so this must be set for scanning to work at all.
+            if (customer == null)
+            {
+                var cm = SingletonBehaviour<CustomerManager>.Instance;
+                customer = cm?.GetRandomAvailableCustomer();
+            }
+
             if (mgr != null && customer != null)
                 NetApply.Run(() => mgr.GetIntoTheQueue(customer));
 
@@ -1622,7 +1632,24 @@ namespace MegastoreMultiplayer.Network
                 products.Add(p);
             }
 
-            NetApply.Run(() => mgr.PlaceProducts(products));
+            NetApply.Run(() =>
+            {
+                mgr.PlaceProducts(products);
+
+                // PlaceProducts may silently no-op if currentCustomer is null or the
+                // desk's internal phase check rejects it. Verify productsPlaced was
+                // actually populated and inject directly if not — without this the
+                // game's scan input sees an empty belt and the client can never scan.
+                var placed = Traverse.Create(mgr).Field("productsPlaced")
+                    .GetValue<System.Collections.Generic.List<Product>>();
+                if (placed == null || placed.Count == 0)
+                {
+                    if (placed == null)
+                        Traverse.Create(mgr).Field("productsPlaced").SetValue(products);
+                    else
+                        placed.AddRange(products);
+                }
+            });
 
             if (MultiplayerManager.IsHost && sender != null)
                 MultiplayerManager.SendToAllReliableExcept(WriteCheckoutProductsPlaced(furnitureId, types, prices), sender);
