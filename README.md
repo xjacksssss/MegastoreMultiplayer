@@ -90,8 +90,6 @@ See [Building from source](#building-from-source).
 ## Known limitations
 
 - **Game updates** — Harmony patches target specific class and method names. A game update that renames or restructures code will break affected patches until the mod is updated. The mod logs a warning if it can't find a patched method.
-- **Box open animation** — the "open box lid" visual is synced but requires the correct method name to be confirmed via dnSpy for your game version. The mod probes common names at startup and logs whether the patch succeeded.
-- **Customer complaint animation** — same dnSpy verification requirement as above.
 - **Sound events** — multiplayer sound cues (oven ding, truck horn, store open chime) rely on the game's own `AudioSource` components. If a game update restructures audio, sounds may be silent on clients.
 - **4-player support** — tested primarily with 2 players. 3–4 player sessions may surface edge cases not yet covered.
 
