@@ -106,11 +106,16 @@ See [Building from source](#building-from-source).
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/MegastoreMultiplayer.git
+   git clone https://github.com/xjacksssss/MegastoreMultiplayer.git
    cd MegastoreMultiplayer
    ```
 
-2. Update the game path in `MegastoreMultiplayer/MegastoreMultiplayer.csproj`:
+2. Activate the git hooks (one-time, per clone):
+   ```powershell
+   .\setup-dev.ps1
+   ```
+
+3. Update the game path in `MegastoreMultiplayer/MegastoreMultiplayer.csproj`:
    ```xml
    <GameDir>C:\Games\Megastore.Simulator.v0.4.1</GameDir>
    ```
