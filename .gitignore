@@ -1,10 +1,14 @@
-# Never commit game DLLs — copyright
+# Never commit game DLLs from the live install — copyright
 libs/
+# ci-libs/ is intentionally committed (reference assemblies for CI builds)
+!ci-libs/
 **/Assembly-CSharp.dll
 **/UnityEngine*.dll
 **/BepInEx.dll
 **/0Harmony.dll
 **/DOTween.dll
+# Allow the same filenames inside ci-libs/
+!ci-libs/*.dll
 
 # Build output
 bin/

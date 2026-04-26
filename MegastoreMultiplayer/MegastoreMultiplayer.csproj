@@ -6,9 +6,16 @@
     <AssemblyName>MegastoreMultiplayer</AssemblyName>
     <RootNamespace>MegastoreMultiplayer</RootNamespace>
 
-    <!-- Auto-copy the built DLL into BepInEx plugins after each build -->
+    <!-- Local game install — update this per machine. CI leaves it unset. -->
     <GameDir>C:\Games\Megastore.Simulator.v0.4.1</GameDir>
     <PluginOutputDir>$(GameDir)\BepInEx\plugins\MegastoreMultiplayer</PluginOutputDir>
+
+    <!-- CI: game DLLs committed to ci-libs/ when GameDir is absent -->
+    <CiLibs>$(MSBuildThisFileDirectory)..\ci-libs</CiLibs>
+    <RefDir Condition="Exists('$(GameDir)')">$(GameDir)\Megastore Simulator_Data\Managed</RefDir>
+    <RefDir Condition="!Exists('$(GameDir)')">$(CiLibs)</RefDir>
+    <BepDir Condition="Exists('$(GameDir)')">$(GameDir)\BepInEx\core</BepDir>
+    <BepDir Condition="!Exists('$(GameDir)')">$(CiLibs)</BepDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,69 +24,70 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- BepInEx & Harmony — from the game's BepInEx folder -->
+    <!-- BepInEx & Harmony -->
     <Reference Include="BepInEx">
-      <HintPath>$(GameDir)\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(BepDir)\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>$(GameDir)\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(BepDir)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- Unity engine DLLs -->
     <Reference Include="UnityEngine">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.AnimationModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(RefDir)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- DOTween -->
     <Reference Include="DOTween">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\DOTween.dll</HintPath>
+      <HintPath>$(RefDir)\DOTween.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- The game itself -->
     <Reference Include="Assembly-CSharp">
-      <HintPath>$(GameDir)\Megastore Simulator_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(RefDir)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
   <!-- After build: copy mod DLL + bundled NuGet DLLs (e.g. LiteNetLib) to BepInEx plugins -->
-  <Target Name="CopyToPlugins" AfterTargets="Build">
+  <!-- Skipped automatically in CI where GameDir doesn't exist -->
+  <Target Name="CopyToPlugins" AfterTargets="Build" Condition="Exists('$(GameDir)')">
     <MakeDir Directories="$(PluginOutputDir)" />
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(PluginOutputDir)" />
     <Copy SourceFiles="@(ReferenceCopyLocalPaths)" DestinationFolder="$(PluginOutputDir)"
