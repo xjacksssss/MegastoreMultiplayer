@@ -87,6 +87,20 @@ namespace MegastoreMultiplayer.UI
                 _stylesInitialised = true;
             }
 
+            // Version watermark — main menu only, bottom-right corner.
+            if (IsOnMainMenu)
+            {
+                var verStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 10,
+                    normal   = { textColor = new Color(1f, 1f, 1f, 0.35f) },
+                };
+                var verLabel = $"MegastoreMP v{PluginInfo.PLUGIN_VERSION}";
+                var verSize  = verStyle.CalcSize(new GUIContent(verLabel));
+                GUI.Label(new Rect(Screen.width - verSize.x - 6f, Screen.height - verSize.y - 6f, verSize.x, verSize.y),
+                    verLabel, verStyle);
+            }
+
             if (!ShouldShowButton()) return;
 
             float btnW = 200f, btnH = 28f;
