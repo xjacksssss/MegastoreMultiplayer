@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -106,6 +105,9 @@ namespace MegastoreMultiplayer.UI
         private void DrawWindow(int _)
         {
             GUILayout.Space(4);
+
+            // ── Update banner ─────────────────────────────────────────────────
+            DrawUpdateBanner();
 
             // ── Player name ───────────────────────────────────────────────────
             GUILayout.BeginHorizontal();
@@ -233,6 +235,48 @@ namespace MegastoreMultiplayer.UI
 
             GUILayout.Space(4);
             GUI.DragWindow(new Rect(0, 0, 10000, 20));
+        }
+
+        private void DrawUpdateBanner()
+        {
+            switch (UpdateChecker.State)
+            {
+                case UpdateChecker.CheckState.UpdateAvailable:
+                {
+                    var style = new GUIStyle(GUI.skin.label)
+                        { normal = { textColor = Color.green }, fontStyle = FontStyle.Bold };
+                    GUILayout.Label($"★  Update available — v{UpdateChecker.LatestVersion}", style);
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Update & Restart", GUILayout.Width(150)))
+                        UpdateChecker.StartDownload();
+                    if (GUILayout.Button("Ignore", GUILayout.Width(60)))
+                        UpdateChecker.Dismiss();
+                    GUILayout.EndHorizontal();
+                    GUILayout.Space(4);
+                    break;
+                }
+                case UpdateChecker.CheckState.Downloading:
+                    GUILayout.Label("Downloading update…");
+                    GUILayout.Space(4);
+                    break;
+
+                case UpdateChecker.CheckState.ReadyToApply:
+                {
+                    var style = new GUIStyle(GUI.skin.label) { normal = { textColor = Color.green } };
+                    GUILayout.Label($"v{UpdateChecker.LatestVersion} downloaded — restart to apply.", style);
+                    if (GUILayout.Button("Restart Now"))
+                        UpdateChecker.RestartNow();
+                    GUILayout.Space(4);
+                    break;
+                }
+                case UpdateChecker.CheckState.Failed:
+                {
+                    var style = new GUIStyle(GUI.skin.label) { normal = { textColor = Color.yellow } };
+                    GUILayout.Label($"Update check failed: {UpdateChecker.FailReason}", style);
+                    GUILayout.Space(4);
+                    break;
+                }
+            }
         }
 
         private void DrawHostIpPanel()

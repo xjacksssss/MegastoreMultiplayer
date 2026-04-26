@@ -27,6 +27,8 @@ namespace MegastoreMultiplayer
             TryPatchBoxOpen();
             TryPatchCustomerComplain();
 
+            UpdateChecker.CheckAsync();
+
             // Attach the connection UI to a persistent GameObject
             var uiGo = new GameObject("MegastoreMultiplayer_UI");
             DontDestroyOnLoad(uiGo);
